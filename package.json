@@ -81,5 +81,9 @@
         }
       ]
     }
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./src/renderers/detail": "./src/renderers/detail.tsx"
   }
 }
