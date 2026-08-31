@@ -55,7 +55,7 @@
         "renderers": {
           "detail": {
             "entry": "./src/renderers/detail.tsx",
-            "propsApiVersion": 1,
+            "propsApiVersion": 2,
             "representations": [
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

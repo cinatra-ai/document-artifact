@@ -1,4 +1,4 @@
-// `@cinatra-ai/document-artifact` — the system-base office-document renderer. It ships a `detail`-slot renderer that presents an uploaded office document (Word / Excel / PowerPoint / OpenDocument) as a typed download shell (a browser cannot render these formats inline).
+// `@cinatra-ai/document-artifact` — the system-base office-document renderer. It ships a `detail`-slot renderer that presents an uploaded office document: the presentation form through an embedded OpenXML viewer, and the take-away forms (Word / Excel / OpenDocument) as a typed download shell, which is also the viewer's own fallback.
 //
 // A renderer artifact: it declares its accepted upload MIME set (the required
 // MIME-base expansion, epic cinatra#1883 slice A1), a single `detail`-slot v1
@@ -17,8 +17,15 @@
 
 export {
   type ArtifactRendererProps,
+  type ArtifactByteReference,
+  type ArtifactByteRoad,
   ARTIFACT_RENDERER_PROPS_API_VERSION,
+  ARTIFACT_RENDERER_PROPS_BYTE_REFERENCE_VERSION,
 } from "./artifact-renderer-props";
+export {
+  OPENXML_PRESENTATION_MIME,
+  isOpenXmlPresentation,
+} from "./renderers/openxml-presentation-viewer";
 
 /** The closed v1 renderer-slot names. This base ships `detail` only. */
 export type ArtifactUiSlot = "detail" | "preview";
@@ -53,7 +60,7 @@ export const documentArtifactManifest: DocumentArtifactManifest = {
     renderers: {
       detail: {
         entry: "./src/renderers/detail.tsx",
-        propsApiVersion: 1,
+        propsApiVersion: 2,
         representations: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.openxmlformats-officedocument.presentationml.presentation","application/vnd.oasis.opendocument.text"],
       },
     },
