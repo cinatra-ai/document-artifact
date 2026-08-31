@@ -1,23 +1,37 @@
 // Document detail renderer (slot `detail`).
 //
-// The office formats this base accepts (Word .docx, Excel .xlsx, PowerPoint
-// .pptx, OpenDocument Text .odt) cannot be rendered inline by a browser, and the
-// v1 renderer snapshot carries only host-authorized URLs — never the document
-// bytes. So the faithful minimal renderer is a typed download SHELL: it names
-// the concrete office format (derived from the declared media type), shows the
-// size, and offers a download affordance. This matches the sibling bases'
-// passive-URL depth — no client-side document conversion / preview pipeline
-// (that would be gold-plating well beyond a system base).
+// This base accepts four office formats — Word .docx, Excel .xlsx, PowerPoint
+// .pptx and OpenDocument Text .odt. Three of them a reader takes away rather
+// than reads in place, and for those the faithful minimal renderer is a typed
+// download SHELL: it names the concrete office format (derived from the
+// declared media type), shows the size, and offers a download affordance.
 //
-// v1 renderer: requests NO host ports; renders ONLY from the host-supplied
-// authorized snapshot (`ArtifactRendererProps`).
+// THE PRESENTATION FORM IS THE EXCEPTION. It trades that shell for an embedded
+// OpenXML viewer pointed at the address the byte road resolved, with the same
+// typed panel as the viewer's own fallback content — so the reader reads the
+// deck in place where the browser can present it, and lands on exactly the old
+// shell where it cannot.
 //
-// NEVER-BLANK: the shell always renders the document identity; the panel is
-// never empty even when no download URL was authorized.
+// THE ADDRESS COMES FROM THE BYTE ROAD. Inside a third-party application the
+// host's session route carries no cookie, so a shell offering it hands the
+// reader a dead link and a viewer pointed at it draws a blank plate. At props
+// version 2 the snapshot carries the byte reference the reader may actually
+// fetch on the surface they are on; a snapshot built at the older version has
+// no reference and falls back to the session href. The renderer requests NO
+// host ports, builds no address of its own, and fetches nothing.
+//
+// NEVER-BLANK: the typed panel always renders the document identity, whether on
+// its own or as the viewer's fallback — the panel is never empty even when no
+// road carried an address.
 
 import type { ReactElement } from "react";
 
 import type { ArtifactRendererProps } from "../artifact-renderer-props";
+import { resolveByteRoad, type ByteRoadName } from "./byte-road";
+import {
+  OpenXmlPresentationViewer,
+  isOpenXmlPresentation,
+} from "./openxml-presentation-viewer";
 
 /** Map a declared office media type to a human format label (pure; exported for
  *  tests). Unknown / absent media types fall back to the generic "Document". */
@@ -50,17 +64,31 @@ export function formatBytes(size: number | null | undefined): string | null {
   return `${n.toFixed(1)} ${units[i]}`;
 }
 
-export default function DocumentArtifactDetail(props: ArtifactRendererProps): ReactElement {
-  const downloadHref = props.actions?.download ?? props.urls?.download ?? null;
-  const title = props.artifact?.title ?? null;
-  const format = officeFormatLabel(props.representation?.mime ?? props.artifact?.mime);
-  const size = formatBytes(props.artifact?.size);
-  const heading = title ?? format;
-
+/**
+ * The typed download shell — the panel three of the four forms draw on their
+ * own, and the panel the presentation viewer falls back to. Exported so the two
+ * uses cannot drift apart.
+ */
+export function DocumentDownloadShell({
+  heading,
+  format,
+  size,
+  downloadHref,
+  road,
+  embedded = false,
+}: {
+  readonly heading: string;
+  readonly format: string;
+  readonly size: string | null;
+  readonly downloadHref: string | null;
+  readonly road: ByteRoadName;
+  readonly embedded?: boolean;
+}): ReactElement {
   return (
     <article
       className="soft-panel rounded-card overflow-hidden p-6"
-      data-document-artifact="shell"
+      data-document-artifact={embedded ? "shell-fallback" : "shell"}
+      data-byte-road={road}
     >
       <p className="text-sm font-medium">{heading}</p>
       <p className="text-sm text-muted-foreground">
@@ -73,4 +101,48 @@ export default function DocumentArtifactDetail(props: ArtifactRendererProps): Re
       ) : null}
     </article>
   );
+}
+
+export default function DocumentArtifactDetail(props: ArtifactRendererProps): ReactElement {
+  const bytes = resolveByteRoad(props);
+  const mime = props.representation?.mime ?? props.artifact?.mime;
+  const title = props.artifact?.title ?? null;
+  const format = officeFormatLabel(mime);
+  const size = formatBytes(props.artifact?.size);
+  const heading = title ?? format;
+
+  const shell = (
+    <DocumentDownloadShell
+      heading={heading}
+      format={format}
+      size={size}
+      downloadHref={bytes.download}
+      road={bytes.road}
+    />
+  );
+
+  // The presentation form reads in place wherever the browser can present it.
+  // An attachment-disposition address would prompt a download instead of
+  // presenting, so the viewer mounts only over a preview address.
+  if (isOpenXmlPresentation(mime) && bytes.preview) {
+    return (
+      <OpenXmlPresentationViewer
+        src={bytes.preview}
+        road={bytes.road}
+        label={`Presentation preview: ${heading}`}
+        fallback={
+          <DocumentDownloadShell
+            heading={heading}
+            format={format}
+            size={size}
+            downloadHref={bytes.download}
+            road={bytes.road}
+            embedded
+          />
+        }
+      />
+    );
+  }
+
+  return shell;
 }
