@@ -68,6 +68,12 @@ export function formatBytes(size: number | null | undefined): string | null {
  * The typed download shell — the panel three of the four forms draw on their
  * own, and the panel the presentation viewer falls back to. Exported so the two
  * uses cannot drift apart.
+ *
+ * IT DRAWS THE FOUR PARTS THE DRAWING GIVES A DOWNLOAD CARD, AND NO FIFTH (the
+ * review drawing §V.2): "the file's name, its form, its size, and the download".
+ * It used to append a sentence telling the reader what to do with the file, and
+ * its control said what it was downloading; a proof round graded both as
+ * deviations from the drawn card, and neither is a part of it.
  */
 export function DocumentDownloadShell({
   heading,
@@ -92,11 +98,11 @@ export function DocumentDownloadShell({
     >
       <p className="text-sm font-medium">{heading}</p>
       <p className="text-sm text-muted-foreground">
-        {format}{size ? ` · ${size}` : ""}. Download to open in its native application.
+        {format}{size ? ` · ${size}` : ""}
       </p>
       {downloadHref ? (
         <a href={downloadHref} className="text-sm underline" download>
-          Download the document
+          Download
         </a>
       ) : null}
     </article>
