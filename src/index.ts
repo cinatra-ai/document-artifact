@@ -28,7 +28,7 @@ export {
 } from "./renderers/openxml-presentation-viewer";
 
 /** The closed v1 renderer-slot names. This base ships `detail` only. */
-export type ArtifactUiSlot = "detail" | "preview";
+export type ArtifactUiSlot = "detail" | "listRow" | "preview";
 
 /** A single slot renderer. v1 requests NO host ports — only these three keys. */
 export interface ArtifactUiRenderer {
@@ -62,6 +62,10 @@ export const documentArtifactManifest: DocumentArtifactManifest = {
         entry: "./src/renderers/detail.tsx",
         propsApiVersion: 2,
         representations: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","application/vnd.openxmlformats-officedocument.presentationml.presentation","application/vnd.oasis.opendocument.text"],
+      },
+      listRow: {
+        entry: "./src/renderers/list-row.tsx",
+        propsApiVersion: 1,
       },
     },
   },
